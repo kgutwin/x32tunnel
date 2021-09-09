@@ -20,11 +20,40 @@ def decode_header(header):
     return struct.unpack('>H', header[1:3])[0]
 
 
+def osc_parse(msg):
+    buf = ''
+    nulls = 0
+    for c in msg:
+        if c == 0:
+            nulls += 1
+            if (len(buf) + nulls) % 4 == 0:
+                yield buf
+                buf = ''
+                nulls = 0
+        else:
+            buf += chr(c)
+
+def osc_join(parts):
+    return b''.join([c.encode() + (b'\x00' * (4 - len(c) % 4)) for c in parts])
+
 def patch_message(message):
-    if message.startswith(b'/xinfo\x00\x00,ssss') or message.startswith(b'/info\x00\x00,ssss'):
-        mparts = message.split(b'\x00\x00\x00')
-        mparts[1] = socket.gethostbyname(socket.gethostname()).encode()
-        message = b'\x00\x00\x00'.join(mparts)
+    if message.startswith(b'/xinfo\x00\x00,ssss\x00\x00\x00'):
+        mparts = list(osc_parse(message))
+        mparts[2] = socket.gethostbyname(socket.gethostname())
+        message = osc_join(mparts)
+        #ip_block_end = 20
+        #while message[ip_block_end] != 0:
+        #    ip_block_end += 4
+        #leading = message[:16]
+        #trailing = message[ip_block_end:]
+        #ip_block = 
+        #ip_block += b'\x00' * (4 - (len(ip_block) % 4))
+        #message = leading + ip_block + trailing
+        log_message('Patched:', None, message)
+    elif message.startswith(b'/status\x00,sss\x00\x00\x00\x00'):
+        mparts = list(osc_parse(message))
+        mparts[3] = socket.gethostbyname(socket.gethostname())
+        message = osc_join(mparts)
         log_message('Patched:', None, message)
     return message
 
