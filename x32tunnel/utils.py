@@ -1,3 +1,4 @@
+import socket
 import string
 import struct
 import logging
@@ -13,10 +14,19 @@ def decode_header(header):
     try:
         assert header[0] == header[3] == b'='[0]
     except AssertionError:
-        raise Exception('Malformed message header: {}'.format(header)) from None
+        raise Exception('Malformed message header: {}'.format(header))
     except IndexError:
-        raise EOFError('Read {} bytes'.format(len(header))) from None
+        raise EOFError('Read {} bytes'.format(len(header)))
     return struct.unpack('>H', header[1:3])[0]
+
+
+def patch_message(message):
+    if message.startswith(b'/xinfo\x00\x00,ssss') or message.startswith(b'/info\x00\x00,ssss'):
+        mparts = message.split(b'\x00\x00\x00')
+        mparts[1] = socket.gethostbyname(socket.gethostname()).encode()
+        message = b'\x00\x00\x00'.join(mparts)
+        log_message('Patched:', None, message)
+    return message
 
 
 printable_chars = [c for c in string.printable if c not in '\t\n\r\x0b\x0c']
@@ -24,6 +34,7 @@ printable_chars = [c for c in string.printable if c not in '\t\n\r\x0b\x0c']
 def log_message(text, address, message):
     message = ''.join('~' if chr(c) not in printable_chars else chr(c)
                       for c in message)
+    #message = repr(message)
     logger.debug('{} {} {}'.format(text, address, message))
 
 

@@ -41,6 +41,7 @@ class UdpServer:
         return address, message
 
     def send(self, address, message):
+        message = utils.patch_message(message)
         self.sock.sendto(message, address)
 
 
