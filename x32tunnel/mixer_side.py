@@ -63,7 +63,7 @@ def main_loop(args):
 
     while True:
         ready = select.select([tun.lsock] + cln.sockets + tun.sockets, [], [])[0]
-        logger.debug(f'Ready: {ready}')
+        logger.debug('Ready: {}'.format(ready))
         for sock in ready:
             if sock == tun.lsock:
                 # instantiate a new connection

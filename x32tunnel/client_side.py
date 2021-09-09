@@ -52,7 +52,7 @@ def main_loop(args):
                  
     while True:
         ready = select.select([srv.sock] + tun.sockets, [], [])[0]
-        logger.debug(f'Ready: {ready}')
+        logger.debug('Ready: {}'.format(ready))
         for sock in ready:
             if sock == srv.sock:
                 # upstream path, towards mixer via tunnel

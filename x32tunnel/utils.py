@@ -13,9 +13,9 @@ def decode_header(header):
     try:
         assert header[0] == header[3] == b'='[0]
     except AssertionError:
-        raise Exception(f'Malformed message header: {header}') from None
+        raise Exception('Malformed message header: {}'.format(header)) from None
     except IndexError:
-        raise EOFError(f'Read {len(header)} bytes') from None
+        raise EOFError('Read {} bytes'.format(len(header))) from None
     return struct.unpack('>H', header[1:3])[0]
 
 
@@ -24,7 +24,7 @@ printable_chars = [c for c in string.printable if c not in '\t\n\r\x0b\x0c']
 def log_message(text, address, message):
     message = ''.join('~' if chr(c) not in printable_chars else chr(c)
                       for c in message)
-    logger.debug(f'{text} {address} {message}')
+    logger.debug('{} {} {}'.format(text, address, message))
 
 
 class MultiConnections:
