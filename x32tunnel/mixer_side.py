@@ -13,7 +13,7 @@ class TunnelConnections(utils.MultiConnections):
         super().__init__()
         self.lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.lsock.bind((address, port))
-        self.lsock.listen()
+        self.lsock.listen(2)
 
     def accept(self):
         # a connection is waiting on lsock
