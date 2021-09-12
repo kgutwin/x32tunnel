@@ -26,7 +26,7 @@ class TunnelConnections(utils.MultiConnections):
         
     def on_receive(self, address, sock):
         message = utils.read_message(sock)
-        utils.log_message('Tun recv', address, header + message)
+        utils.log_message('Tun recv', address, message)
         return address, message
 
     def on_send(self, sock, message):
