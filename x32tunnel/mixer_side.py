@@ -42,7 +42,7 @@ class TunnelConnections(utils.MultiConnections):
         encoded_message = utils.encode_message(message)
         utils.log_message('Tun send', sock.getpeername(), encoded_message)
         try:
-            self.queues[sock].put(encoded_message)
+            self.queues[sock].put(encoded_message, block=False)
         except queue.Full:
             pass
         #sock.send(encoded_message)
