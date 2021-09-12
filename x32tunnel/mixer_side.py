@@ -61,6 +61,8 @@ def main_loop(args):
     cln = UdpClient(args.mixer_host)
     tun = TunnelConnections('0.0.0.0', args.tunnel_port)
 
+    filters = [f.encode() for f in args.filter or []]
+
     while True:
         ready = select.select([tun.lsock] + cln.sockets + tun.sockets, [], [])[0]
         #logger.debug('Ready: {}'.format(ready))
@@ -71,7 +73,7 @@ def main_loop(args):
             elif sock in cln.sockets:
                 # downstream path, towards client via tunnel
                 address, message = cln.receive(sock)
-                if args.filter and any(bytes(f) in message for f in args.filter):
+                if any(f in message for f in filters):
                     continue
                 tun.send(address, message)
             else:
