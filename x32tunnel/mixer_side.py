@@ -84,10 +84,11 @@ def main_loop(args):
                 tun.accept()
             elif sock in cln.sockets:
                 # downstream path, towards client via tunnel
-                address, message = cln.receive(sock)
-                if any(f in message for f in filters):
-                    continue
-                tun.send(address, message)
+                for i in range(8):
+                    address, message = cln.receive(sock)
+                    if not message or any(f in message for f in filters):
+                        break
+                    tun.send(address, message)
             else:
                 # upstream path, towards mixer
                 address, message = tun.receive(sock)
