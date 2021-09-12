@@ -24,7 +24,7 @@ class TunnelConnections(utils.MultiConnections):
         self.conns[address] = sock
         self.addresses[sock] = address
         self.queues[sock] = queue.LifoQueue(maxsize=8)
-        threading.Thread(target=self.send_thread, args=[sock])
+        threading.Thread(target=self.send_thread, args=[sock]).start()
 
     def open_socket(self):
         raise Exception("should not get here")
