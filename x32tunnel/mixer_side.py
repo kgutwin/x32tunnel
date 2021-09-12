@@ -21,6 +21,10 @@ class TunnelConnections(utils.MultiConnections):
     def accept(self):
         # a connection is waiting on lsock
         sock, address = self.lsock.accept()
+        sock.setsockopt(
+            socket.SOL_SOCKET,
+            socket.SO_RCVBUF,
+            8192)
         self.conns[address] = sock
         self.addresses[sock] = address
         self.queues[sock] = queue.LifoQueue(maxsize=8)
