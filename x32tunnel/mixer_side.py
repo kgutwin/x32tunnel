@@ -71,7 +71,7 @@ def main_loop(args):
             elif sock in cln.sockets:
                 # downstream path, towards client via tunnel
                 address, message = cln.receive(sock)
-                if args.filter and any(f in message for f in args.filter):
+                if args.filter and any(bytes(f) in message for f in args.filter):
                     continue
                 tun.send(address, message)
             else:
