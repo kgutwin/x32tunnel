@@ -51,14 +51,6 @@ def patch_message(message):
         mparts = list(osc_parse(message))
         mparts[2] = socket.gethostbyname(socket.gethostname())
         message = osc_join(mparts)
-        #ip_block_end = 20
-        #while message[ip_block_end] != 0:
-        #    ip_block_end += 4
-        #leading = message[:16]
-        #trailing = message[ip_block_end:]
-        #ip_block = 
-        #ip_block += b'\x00' * (4 - (len(ip_block) % 4))
-        #message = leading + ip_block + trailing
         log_message('Patched:', None, message)
     elif message.startswith(b'/status\x00,sss\x00\x00\x00\x00'):
         mparts = list(osc_parse(message))
@@ -81,6 +73,7 @@ class MultiConnections:
     def __init__(self):
         self.conns = {}
         self.addresses = {}
+        self.threads = {}
 
     def open_socket(self):
         raise NotImplemented()

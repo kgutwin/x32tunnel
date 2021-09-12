@@ -1,7 +1,9 @@
+import queue
 import socket
 import select
 import random
 import logging
+import threading
 
 from x32tunnel import utils
 
@@ -11,6 +13,7 @@ logger = logging.getLogger('x32tunnel')
 class TunnelConnections(utils.MultiConnections):
     def __init__(self, address='0.0.0.0', port=10024):
         super().__init__()
+        self.queues = {}
         self.lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.lsock.bind((address, port))
         self.lsock.listen(2)
@@ -20,6 +23,8 @@ class TunnelConnections(utils.MultiConnections):
         sock, address = self.lsock.accept()
         self.conns[address] = sock
         self.addresses[sock] = address
+        self.queues[sock] = queue.LifoQueue(maxsize=8)
+        threading.Thread(target=self.send_thread, args=[sock], daemon=True)
 
     def open_socket(self):
         raise Exception("should not get here")
@@ -32,8 +37,17 @@ class TunnelConnections(utils.MultiConnections):
     def on_send(self, sock, message):
         encoded_message = utils.encode_message(message)
         utils.log_message('Tun send', sock.getpeername(), encoded_message)
-        sock.send(encoded_message)
+        try:
+            self.queues[sock].put(encoded_message)
+        except queue.Full:
+            pass
+        #sock.send(encoded_message)
         
+    def send_thread(self, sock):
+        q = self.queues[sock]
+        while True:
+            message = q.get()
+            sock.send(message)
         
 
 class UdpClient(utils.MultiConnections):
