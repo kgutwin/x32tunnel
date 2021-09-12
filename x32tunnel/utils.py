@@ -1,3 +1,4 @@
+import zlib
 import socket
 import string
 import struct
@@ -7,6 +8,7 @@ logger = logging.getLogger('x32tunnel')
 
 
 def encode_message(message):
+    message = zlib.compress(message)
     return b'=' + struct.pack('>H', len(message)) + b'=' + message
 
 
@@ -18,6 +20,14 @@ def decode_header(header):
     except IndexError:
         raise EOFError('Read {} bytes'.format(len(header)))
     return struct.unpack('>H', header[1:3])[0]
+
+
+def read_message(sock):
+    header = sock.recv(4)
+    message_len = utils.decode_header(header)
+    message = sock.recv(message_len)
+    message = zlib.decompress(message)
+    return message
 
 
 def osc_parse(msg):

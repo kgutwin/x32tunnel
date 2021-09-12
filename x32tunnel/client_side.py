@@ -24,9 +24,7 @@ class TunnelConnections(utils.MultiConnections):
         sock.sendall(encoded_message)
 
     def on_receive(self, address, sock):
-        header = sock.recv(4)
-        message_len = utils.decode_header(header)
-        message = sock.recv(message_len)
+        message = utils.read_message(sock)
         utils.log_message('Tun recv', address, header + message)
         return address, message
 
