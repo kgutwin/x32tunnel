@@ -65,8 +65,11 @@ class UdpClient(utils.MultiConnections):
         sock.sendto(message, self.mixer)
     
     def on_receive(self, address, sock):
-        message, _ = sock.recvfrom(8192)
-        return address, message
+        try:
+            message, _ = sock.recvfrom(8192)
+            return address, message
+        except socket.error:
+            return None, None
         
 
 def main_loop(args):
