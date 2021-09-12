@@ -57,6 +57,7 @@ class UdpClient(utils.MultiConnections):
 
     def open_socket(self):
         sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        sock.setblocking(False)
         sock.bind(('', random.randint(10000, 10512)))
         return sock
         
