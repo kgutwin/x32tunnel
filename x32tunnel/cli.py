@@ -19,6 +19,7 @@ def parse_args():
 
     mixer_side = subparsers.add_parser("mixer-side")
     mixer_side.add_argument('--mixer-host', '-m', default='mixer')
+    mixer_side.add_argument('--filter', '-f', action='append')
     
     return parser.parse_args()
 

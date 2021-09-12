@@ -63,7 +63,7 @@ def main_loop(args):
 
     while True:
         ready = select.select([tun.lsock] + cln.sockets + tun.sockets, [], [])[0]
-        logger.debug('Ready: {}'.format(ready))
+        #logger.debug('Ready: {}'.format(ready))
         for sock in ready:
             if sock == tun.lsock:
                 # instantiate a new connection
@@ -71,6 +71,8 @@ def main_loop(args):
             elif sock in cln.sockets:
                 # downstream path, towards client via tunnel
                 address, message = cln.receive(sock)
+                if any(f in message for f in args.filter):
+                    continue
                 tun.send(address, message)
             else:
                 # upstream path, towards mixer
