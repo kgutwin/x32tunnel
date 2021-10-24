@@ -83,7 +83,7 @@ def main_loop(args):
     tun = TunnelConnections('0.0.0.0', args.tunnel_port)
 
     filters = [f.encode() for f in args.filter or []]
-    rate_limits = {f.encode():0 for f in args.rate_limit or []}
+    rate_limits = {f.encode():0 for f in args.rate_limits or []}
 
     while True:
         ready = select.select([tun.lsock] + cln.sockets + tun.sockets, [], [])[0]
