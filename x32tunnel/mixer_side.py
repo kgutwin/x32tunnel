@@ -1,3 +1,4 @@
+import time
 import queue
 import socket
 import select
@@ -82,6 +83,7 @@ def main_loop(args):
     tun = TunnelConnections('0.0.0.0', args.tunnel_port)
 
     filters = [f.encode() for f in args.filter or []]
+    rate_limits = {f.encode():0 for f in args.rate_limit or []}
 
     while True:
         ready = select.select([tun.lsock] + cln.sockets + tun.sockets, [], [])[0]
@@ -94,9 +96,18 @@ def main_loop(args):
                 # downstream path, towards client via tunnel
                 for i in range(8):
                     address, message = cln.receive(sock)
+                    drop = False
                     if not message or any(f in message for f in filters):
+                        drop = True
                         break
-                    tun.send(address, message)
+                    for f in rate_limits:
+                        if f in message:
+                            if time.time() > rate_limits[f] + args.rate_limit:
+                                rate_limits[f] = time.time()
+                            else:
+                                drop = True
+                    if not drop:
+                        tun.send(address, message)
             else:
                 # upstream path, towards mixer
                 address, message = tun.receive(sock)
