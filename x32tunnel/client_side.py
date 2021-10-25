@@ -20,7 +20,7 @@ class TunnelConnections(utils.MultiConnections):
         
     def on_send(self, sock, message):
         encoded_message = utils.encode_message(message)
-        utils.log_message('Tun send', sock.getpeername(), encoded_message)
+        utils.log_message('Tun send', sock.getpeername(), message)
         sock.sendall(encoded_message)
 
     def on_receive(self, address, sock):

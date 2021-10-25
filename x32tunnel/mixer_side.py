@@ -94,7 +94,7 @@ def main_loop(args):
                 tun.accept()
             elif sock in cln.sockets:
                 # downstream path, towards client via tunnel
-                for i in range(8):
+                for i in range(1):
                     address, message = cln.receive(sock)
                     drop = False
                     if not message or any(f in message for f in filters):
