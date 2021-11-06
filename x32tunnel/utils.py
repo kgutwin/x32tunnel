@@ -7,9 +7,16 @@ import logging
 logger = logging.getLogger('x32tunnel')
 
 
+class MalformedMessageException(Exception):
+    def __init__(self, m, extra):
+        super().__init__(m)
+        self.extra = extra
+        
+
 def encode_message(message):
     message = zlib.compress(message)
-    assert len(message) < 65535, ('message length exceeds limit! ' + str(len(message)))
+    if len(message) > 65535:
+        raise MalformedMessageException('message is too long!', message)
     return b'=' + struct.pack('>H', len(message)) + b'=' + message
 
 
@@ -17,7 +24,7 @@ def decode_header(header):
     try:
         assert header[0] == header[3] == b'='[0]
     except AssertionError:
-        raise Exception('Malformed message header: {}'.format(header))
+        raise MalformedMessageException('Malformed message header: {}'.format(header), header)
     except IndexError:
         raise EOFError('Read {} bytes'.format(len(header)))
     return struct.unpack('>H', header[1:3])[0]
@@ -28,7 +35,10 @@ def read_message(sock):
     message_len = decode_header(header)
     message = b""
     while len(message) < message_len:
-        message += sock.recv(message_len)
+        new = sock.recv(message_len)
+        if not new:
+            raise EOFError('Read {} bytes, expected {}'.format(len(message), message_len))
+        message += new
     message = zlib.decompress(message)
     return message
 

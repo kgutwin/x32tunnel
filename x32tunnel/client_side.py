@@ -55,9 +55,15 @@ def main_loop(args):
         for sock in ready:
             if sock == srv.sock:
                 # upstream path, towards mixer via tunnel
-                address, message = srv.receive()
-                tun.send(address, message)
+                try:
+                    address, message = srv.receive()
+                    tun.send(address, message)
+                except (utils.MalformedMessageException, EOFError) as ex:
+                    logger.warn(str(ex))
             else:
                 # downstream path, towards local client
-                address, message = tun.receive(sock)
-                srv.send(address, message)
+                try:
+                    address, message = tun.receive(sock)
+                    srv.send(address, message)
+                except (utils.MalformedMessageException, EOFError) as ex:
+                    logger.warn(str(ex))

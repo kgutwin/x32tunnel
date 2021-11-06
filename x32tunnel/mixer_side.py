@@ -78,14 +78,48 @@ class UdpClient(utils.MultiConnections):
             return None, None
         
 
+class MessageFilter:
+    def __init__(self, filter, rate_limits, rate_limit):
+        self.filters = [
+            re.compile(f.encode())
+            for f in filter
+        ]
+        self.rate_limit_patterns = [
+            re.compile(f.encode())
+            for f in rate_limits
+        ]
+        self.rate_limits = {}
+        self.rate_limit = rate_limit
+
+    def pass(self, message):
+        if not message:
+            return False
+
+        if any(f.search(message) for f in self.filters):
+            return False
+
+        for p in self.rate_limit_patterns:
+            m = p.search(message)
+            if m:
+                f = m.group(0)
+                if time.time() > self.rate_limits[f] + self.rate_limit:
+                    rate_limits[f] = time.time()
+                else:
+                    return False
+
+        return True
+
+
 def main_loop(args):
     logger.info('Starting mixer side')
     cln = UdpClient(args.mixer_host)
     tun = TunnelConnections('0.0.0.0', args.tunnel_port)
 
-    filters = [re.compile(f.encode()) for f in args.filter or []]
-    rate_limit_patterns = [re.compile(f.encode()) for f in args.rate_limits or []]
-    rate_limits = {}
+    message_filter = MessageFilter(
+        args.filter or [],
+        args.rate_limits or [],
+        args.rate_limit
+    )
 
     while True:
         ready = select.select([tun.lsock] + cln.sockets + tun.sockets, [], [])[0]
@@ -96,23 +130,16 @@ def main_loop(args):
                 tun.accept()
             elif sock in cln.sockets:
                 # downstream path, towards client via tunnel
-                for i in range(1):
+                try:
                     address, message = cln.receive(sock)
-                    drop = False
-                    if not message or any(f.search(message) for f in filters):
-                        drop = True
-                        break
-                    for p in rate_limit_patterns:
-                        m = p.search(message)
-                        if m:
-                            f = m.group(0)
-                            if time.time() > rate_limits[f] + args.rate_limit:
-                                rate_limits[f] = time.time()
-                            else:
-                                drop = True
-                    if not drop:
+                    if message_filter.pass(message):
                         tun.send(address, message)
+                except (utils.MalformedMessageException, EOFError) as ex:
+                    logger.warn(str(ex))
             else:
                 # upstream path, towards mixer
-                address, message = tun.receive(sock)
-                cln.send(address, message)
+                try:
+                    address, message = tun.receive(sock)
+                    cln.send(address, message)
+                except (utils.MalformedMessageException, EOFError) as ex:
+                    logger.warn(str(ex))
