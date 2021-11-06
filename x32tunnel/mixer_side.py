@@ -32,6 +32,13 @@ class TunnelConnections(utils.MultiConnections):
         self.queues[sock] = queue.LifoQueue(maxsize=8)
         threading.Thread(target=self.send_thread, args=[sock]).start()
 
+    def close(self, sock):
+        self.queues[sock].put(None)
+        address = self.addresses[sock]
+        del(self.addresses[sock])
+        del(self.conns[address])
+        del(self.queues[sock])
+
     def open_socket(self):
         raise Exception("should not get here")
         
@@ -53,6 +60,8 @@ class TunnelConnections(utils.MultiConnections):
         q = self.queues[sock]
         while True:
             message = q.get()
+            if message is None:
+                break
             sock.send(message)
         
 
@@ -134,8 +143,10 @@ def main_loop(args):
                     address, message = cln.receive(sock)
                     if message_filter.allow(message):
                         tun.send(address, message)
-                except (utils.MalformedMessageException, EOFError) as ex:
+                except utils.MalformedMessageException as ex:
                     logger.warn(str(ex))
+                except EOFError:
+                    tun.close(sock)
             else:
                 # upstream path, towards mixer
                 try:

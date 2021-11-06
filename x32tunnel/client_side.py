@@ -58,8 +58,11 @@ def main_loop(args):
                 try:
                     address, message = srv.receive()
                     tun.send(address, message)
-                except (utils.MalformedMessageException, EOFError) as ex:
+                except utils.MalformedMessageException as ex:
                     logger.warn(str(ex))
+                except EOFError:
+                    logger.info('Server closed connection, exiting')
+                    break
             else:
                 # downstream path, towards local client
                 try:
