@@ -20,8 +20,10 @@ def parse_args():
     mixer_side = subparsers.add_parser("mixer-side")
     mixer_side.add_argument('--mixer-host', '-m', default='mixer')
     mixer_side.add_argument('--filter', '-f', action='append')
-    mixer_side.add_argument('--rate-limit', '-R', type=float, default=1.0)
-    mixer_side.add_argument('--rate-limits', '-r', action='append', default=['meters'])
+    mixer_side.add_argument('--rate-limit', '-R', type=float, default=0.1)
+    mixer_side.add_argument('--rate-limits', '-r', action='append', default=[
+            'meters/0', 'meters/2', 'meters/3', 'meters/4', 'meters/5', 
+            'meters/6', 'meters/9', 'meters/10', 'meters/14', 'meters/16'])
     
     return parser.parse_args()
 

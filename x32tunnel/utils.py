@@ -25,7 +25,9 @@ def decode_header(header):
 def read_message(sock):
     header = sock.recv(4)
     message_len = decode_header(header)
-    message = sock.recv(message_len)
+    message = ""
+    while len(message) < message_len:
+        message += sock.recv(message_len)
     message = zlib.decompress(message)
     return message
 
