@@ -48,25 +48,23 @@ def main_loop(args):
     logger.info('Starting client side')
     srv = UdpServer(args.udp_bind_host)
     tun = TunnelConnections(args.tunnel_host, args.tunnel_port)
-                 
-    while True:
+    
+    running = True
+    while running:
         ready = select.select([srv.sock] + tun.sockets, [], [])[0]
         #logger.debug('Ready: {}'.format(ready))
         for sock in ready:
-            if sock == srv.sock:
-                # upstream path, towards mixer via tunnel
-                try:
+            try:
+                if sock == srv.sock:
+                    # upstream path, towards mixer via tunnel
                     address, message = srv.receive()
                     tun.send(address, message)
-                except utils.MalformedMessageException as ex:
-                    logger.warn(str(ex))
-                except EOFError:
-                    logger.info('Server closed connection, exiting')
-                    break
-            else:
-                # downstream path, towards local client
-                try:
+                else:
+                    # downstream path, towards local client
                     address, message = tun.receive(sock)
                     srv.send(address, message)
-                except (utils.MalformedMessageException, EOFError) as ex:
-                    logger.warn(str(ex))
+            except utils.MalformedMessageException as ex:
+                logger.warn(str(ex))
+            except EOFError:
+                logger.warn('Server closed connection, exiting')
+                running = False
