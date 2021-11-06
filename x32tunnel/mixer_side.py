@@ -1,3 +1,4 @@
+import re
 import time
 import queue
 import socket
@@ -82,8 +83,9 @@ def main_loop(args):
     cln = UdpClient(args.mixer_host)
     tun = TunnelConnections('0.0.0.0', args.tunnel_port)
 
-    filters = [f.encode() for f in args.filter or []]
-    rate_limits = {f.encode():0 for f in args.rate_limits or []}
+    filters = [re.compile(f.encode()) for f in args.filter or []]
+    rate_limit_patterns = [re.compile(f.encode()) for f in args.rate_limits or []]
+    rate_limits = {}
 
     while True:
         ready = select.select([tun.lsock] + cln.sockets + tun.sockets, [], [])[0]
@@ -97,11 +99,13 @@ def main_loop(args):
                 for i in range(1):
                     address, message = cln.receive(sock)
                     drop = False
-                    if not message or any(f in message for f in filters):
+                    if not message or any(f.search(message) for f in filters):
                         drop = True
                         break
-                    for f in rate_limits:
-                        if f in message:
+                    for p in rate_limit_patterns:
+                        m = p.search(message)
+                        if m:
+                            f = m.group(0)
                             if time.time() > rate_limits[f] + args.rate_limit:
                                 rate_limits[f] = time.time()
                             else:
