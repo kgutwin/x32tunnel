@@ -9,7 +9,7 @@ logger = logging.getLogger('x32tunnel')
 
 def encode_message(message):
     message = zlib.compress(message)
-    assert len(message) < 65535, f'message length exceeds limit! {len(message)} : {message}'
+    assert len(message) < 65535, ('message length exceeds limit! ' + str(len(message)))
     return b'=' + struct.pack('>H', len(message)) + b'=' + message
 
 
