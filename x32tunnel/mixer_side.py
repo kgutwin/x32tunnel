@@ -146,11 +146,16 @@ def main_loop(args):
                 except utils.MalformedMessageException as ex:
                     logger.warn(str(ex))
                 except EOFError:
-                    tun.close(sock)
+                    tsock = tun.conns[address]
+                    logger.warn('Client closed conn, expiring {}'.format(tsock))
+                    tun.close(tsock)
             else:
                 # upstream path, towards mixer
                 try:
                     address, message = tun.receive(sock)
                     cln.send(address, message)
-                except (utils.MalformedMessageException, EOFError) as ex:
+                except utils.MalformedMessageException as ex:
                     logger.warn(str(ex))
+                except EOFError:
+                    logger.warn('Client closed connection, expiring {}'.format(sock))
+                    tun.close(sock)
