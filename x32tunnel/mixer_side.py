@@ -91,7 +91,7 @@ class MessageFilter:
         self.rate_limits = {}
         self.rate_limit = rate_limit
 
-    def pass(self, message):
+    def allow(self, message):
         if not message:
             return False
 
@@ -132,7 +132,7 @@ def main_loop(args):
                 # downstream path, towards client via tunnel
                 try:
                     address, message = cln.receive(sock)
-                    if message_filter.pass(message):
+                    if message_filter.allow(message):
                         tun.send(address, message)
                 except (utils.MalformedMessageException, EOFError) as ex:
                     logger.warn(str(ex))
