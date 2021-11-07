@@ -111,6 +111,7 @@ class MessageFilter:
             m = p.search(message)
             if m:
                 f = m.group(0)
+                self.rate_limits.setdefault(f, time.time())
                 if time.time() > self.rate_limits[f] + self.rate_limit:
                     rate_limits[f] = time.time()
                 else:

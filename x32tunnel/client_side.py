@@ -1,3 +1,4 @@
+import time
 import socket
 import select
 import logging
@@ -48,6 +49,8 @@ def main_loop(args):
     logger.info('Starting client side')
     srv = UdpServer(args.udp_bind_host)
     tun = TunnelConnections(args.tunnel_host, args.tunnel_port)
+
+    latency = None
     
     running = True
     while running:
@@ -58,10 +61,15 @@ def main_loop(args):
                 if sock == srv.sock:
                     # upstream path, towards mixer via tunnel
                     address, message = srv.receive()
+                    if message.startswith(b'/xinfo'):
+                        latency = time.time()
                     tun.send(address, message)
                 else:
                     # downstream path, towards local client
                     address, message = tun.receive(sock)
+                    if latency and message.startswith(b'/xinfo'):
+                        logger.info('RTT: {:.2f} ms'.format((time.time() - latency) * 1000))
+                        latency = None
                     srv.send(address, message)
             except utils.MalformedMessageException as ex:
                 logger.warn(str(ex))
